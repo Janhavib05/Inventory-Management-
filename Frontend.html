@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Management System</title>
+
+<style>
+:root {
+    --bg:#f5f7fb; --card:#fff; --text:#111; --sub:#666; --accent:#4f46e5;
+}
+[data-theme="dark"] {
+    --bg:#0f172a; --card:#1e293b; --text:#f1f5f9; --sub:#94a3b8;
+}
+body {
+    font-family: system-ui;
+    background: var(--bg);
+    color: var(--text);
+    padding:20px;
+    transition:.3s;
+}
+.container { max-width:1100px; margin:auto; }
+
+.header {
+    background:linear-gradient(135deg,#4f46e5,#06b6d4);
+    color:#fff;
+    padding:25px;
+    border-radius:10px;
+    text-align:center;
+}
+
+.summary {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+    gap:10px;
+    margin:15px 0;
+}
+.card {
+    background:var(--card);
+    padding:15px;
+    border-radius:8px;
+    text-align:center;
+}
+
+input,button {
+    padding:8px;
+    margin:4px;
+    border-radius:6px;
+    border:1px solid #ccc;
+}
+button { cursor:pointer; background:var(--accent); color:#fff; border:none; }
+
+table {
+    width:100%;
+    margin-top:10px;
+    border-collapse:collapse;
+}
+th,td {
+    padding:10px;
+    border-bottom:1px solid #ddd;
+}
+tr:hover { background:rgba(0,0,0,0.05); }
+
+.theme-toggle {
+    position:fixed; top:15px; right:15px;
+}
+</style>
+</head>
+
+<body>
+
+<button class="theme-toggle" onclick="toggleTheme()">🌙</button>
+
+<div class="container">
+
+<div class="header">
+<h1>STOCK PRO+</h1>
+<p>Inventory Management System</p>
+</div>
+
+<div class="summary">
+<div class="card"><h2 id="total">0</h2>Total</div>
+<div class="card"><h2 id="low">0</h2>Low Stock</div>
+<div class="card"><h2 id="value">$0</h2>Total Value</div>
+</div>
+
+<input id="search" placeholder="🔍 Search products...">
+
+<form onsubmit="handleSubmit(event)">
+<input id="name" placeholder="Product" required>
+<input id="desc" placeholder="Description" required>
+<input id="price" type="number" placeholder="Price" required>
+<input id="qty" type="number" placeholder="Quantity" required>
+<button id="submitBtn">Add Product</button>
+<button type="button" onclick="cancelEdit()">Cancel</button>
+</form>
+
+<button onclick="exportCSV()">📤 Export CSV</button>
+
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Description</th>
+<th>Price</th>
+<th>Qty</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody id="table"></tbody>
+</table>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+let products = JSON.parse(localStorage.getItem("products")) || [];
+let editId = null;
+
+function save() {
+    localStorage.setItem("products", JSON.stringify(products));
+}
+
+function render(data = products) {
+    const table = document.getElementById("table");
+    table.innerHTML = "";
+
+    data.forEach(p => {
+        table.innerHTML += `
+        <tr>
+            <td>${p.name}</td>
+            <td>${p.desc}</td>
+            <td>$${p.price}</td>
+            <td>${p.qty}</td>
+            <td>
+                <button onclick="startEdit(${p.id})">✏️ Edit</button>
+                <button onclick="deleteProduct(${p.id})">🗑️ Delete</button>
+            </td>
+        </tr>`;
+    });
+
+    updateSummary();
+}
+
+function handleSubmit(e) {
+    e.preventDefault();
+
+    if (editId) {
+        const p = products.find(p => p.id === editId);
+        p.name = name.value;
+        p.desc = desc.value;
+        p.price = +price.value;
+        p.qty = +qty.value;
+
+        editId = null;
+        document.getElementById("submitBtn").innerText = "Add Product";
+
+    } else {
+        products.push({
+            id: Date.now(),
+            name: name.value,
+            desc: desc.value,
+            price: +price.value,
+            qty: +qty.value
+        });
+
+        confetti({particleCount:80,spread:60});
+    }
+
+    save();
+    render();
+    e.target.reset();
+}
+
+function startEdit(id) {
+    const p = products.find(p => p.id === id);
+
+    name.value = p.name;
+    desc.value = p.desc;
+    price.value = p.price;
+    qty.value = p.qty;
+
+    editId = id;
+    document.getElementById("submitBtn").innerText = "Update Product";
+}
+
+function cancelEdit() {
+    editId = null;
+    document.querySelector("form").reset();
+    document.getElementById("submitBtn").innerText = "Add Product";
+}
+
+function deleteProduct(id) {
+    if (!confirm("Delete this product?")) return;
+    products = products.filter(p => p.id !== id);
+    save();
+    render();
+}
+
+function updateSummary() {
+    total.innerText = products.length;
+    low.innerText = products.filter(p => p.qty < 10).length;
+    value.innerText = "$" + products.reduce((s,p)=>s+p.price*p.qty,0);
+}
+
+document.getElementById("search").oninput = e => {
+    const v = e.target.value.toLowerCase();
+    render(products.filter(p =>
+        p.name.toLowerCase().includes(v) ||
+        p.desc.toLowerCase().includes(v)
+    ));
+};
+
+function exportCSV() {
+    let csv = "Name,Description,Price,Qty\n";
+    products.forEach(p=>{
+        csv += `${p.name},${p.desc},${p.price},${p.qty}\n`;
+    });
+
+    const blob = new Blob([csv]);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "inventory.csv";
+    a.click();
+}
+
+function toggleTheme() {
+    const dark = document.body.getAttribute("data-theme");
+    document.body.setAttribute("data-theme", dark ? "" : "dark");
+}
+
+render();
+</script>
+
+</body>
+</html>
