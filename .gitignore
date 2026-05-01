@@ -1,18 +1,61 @@
-# This .gitignore is appropriate for repositories deployed to GitHub Pages and using
-# a Gemfile as specified at https://github.com/github/pages-gem#conventional
+# ========================================
+# INVENTORY MANAGEMENT SYSTEM .gitignore
+# ========================================
 
-# Basic Jekyll gitignores (synchronize to Jekyll.gitignore)
-_site/
-.sass-cache/
-.jekyll-cache/
-.jekyll-metadata
+## Backend (Java/Spring Boot)
+backend/target/
+backend/*.log
+backend/mvnw
+backend/mvnw.cmd
+backend/.mvn/wrapper/maven-wrapper.jar
+!backend/src/main/resources/application.properties
 
-# Additional Ruby/bundler ignore for when you run: bundle install
-/vendor
+## Frontend (HTML/JS)
+frontend/dist/
+frontend/node_modules/
+frontend/.cache/
 
-# Specific ignore for GitHub Pages
-# GitHub Pages will always use its own deployed version of pages-gem
-# This means GitHub Pages will NOT use your Gemfile.lock and therefore it is
-# counterproductive to check this file into the repository.
-# Details at https://github.com/github/pages-gem/issues/768
-Gemfile.lock
+## Database
+*.db
+*.h2.db
+h2-console/
+
+## IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+*.swo
+.project
+.classpath
+.settings/
+
+## OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+thumbs.db
+
+## Environment
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+## Docker
+.dockerignore
+
+## Logs
+*.log
+logs/
+
+## Maven
+.m2/repository
+
+## Git
+.git/
